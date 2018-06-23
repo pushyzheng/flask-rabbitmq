@@ -2,7 +2,7 @@
 from app import rpc
 from app import app
 
-class CheckResultRpc(object):
+class CheckResultRpc():
 
     def __init__(self):
         self.data = app.config.get('RPC_DATA')
@@ -10,7 +10,7 @@ class CheckResultRpc(object):
     def callback_a(self, ch, method, props, body):
         print(str(body))
 
-    def declare2(self):
+    def declare(self):
         for name in ['good','task']:
             exchange_name = 's4t-checkResult-exchange'
             queue_name = 's4t-checkResult-queue-{}'.format(name)

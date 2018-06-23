@@ -9,3 +9,4 @@ app.config.from_object(config)
 rpc = RabbitMQ(app)
 
 from app import test
+from app import views

@@ -1,6 +1,7 @@
 # encoding:utf-8
 from src.util._logger import logger
 import threading
+import json
 import pika
 
 class RabbitMQ(object):
@@ -74,13 +75,23 @@ class RabbitMQ(object):
         self._channel.start_consuming()
 
     def register_class(self, rpc_class):
-        if not hasattr(RabbitMQ,'declare'):
+        if not hasattr(rpc_class,'declare'):
             raise AttributeError("注册的类必须包含 declare 方法")
         self._rpc_class_list.append(rpc_class)
 
+    def send(self, body, exchange, key):
+        self._channel.basic_publish(
+            exchange=exchange,
+            routing_key=key,
+            body=body
+        )
+
+    def send_json_string(self, body, exchange, key):
+        self.send(json.dumps(body), exchange=exchange, key=key)
+
     def run(self):
         for item in self._rpc_class_list:
-            item().called()
+            item().declare()
         logger.info("consuming...")
         t = threading.Thread(target = self.consuming)
         t.start()
