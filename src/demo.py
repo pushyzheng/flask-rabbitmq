@@ -1,5 +1,5 @@
 # encoding:utf-8
-from src.util.logger import logger
+from src.util._logger import logger
 from app import app
 import pika
 
@@ -19,6 +19,13 @@ class Demo(object):
         self.channel = self.connection.channel()
 
     def bind_topic_exchange(self, exchange_name, routing_key, queue_name):
+        """
+        绑定主题交换机和队列
+        :param exchange_name: 需要绑定的交换机名
+        :param routing_key:
+        :param queue_name: 需要绑定的交换机队列名
+        :return:
+        """
         self.channel.queue_declare(
             queue=queue_name,
             auto_delete=True,
