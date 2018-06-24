@@ -1,11 +1,10 @@
 # encoding:utf-8
 from app import rpc
-from app import app
 
 class CheckResultRpc():
 
     def __init__(self):
-        self.data = app.config.get('RPC_DATA')
+        pass
 
     def callback_a(self, ch, method, props, body):
         print(str(body))

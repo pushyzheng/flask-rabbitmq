@@ -7,10 +7,8 @@ from app import app
 manager = Manager(app)
 migrate = Migrate(app, db)
 
-
 def make_shell_context():
     return dict(app=app, db=db)
-
 
 manager.add_command('db', MigrateCommand)
 manager.add_command('runServer', Server(host='localhost', port=5000))

@@ -9,6 +9,9 @@ class RabbitMQ(object):
     def __init__(self, app=None):
         self.app = app
         self.config = self.app.config
+        if not (self.config.get('RPC_USER_NAME') and self.config.get('RPC_PASSWORD') and self.config.get('RPC_HOST')):
+            logger.error('没有配置rpc服务器的用户名和密码')
+            raise Exception
         self.credentials = pika.PlainCredentials(
             self.config['RPC_USER_NAME'],
             self.config['RPC_PASSWORD']
@@ -56,16 +59,41 @@ class RabbitMQ(object):
             arguments=arguments
         )
 
-    def declare_basic_consuming(self, callback, queue_name):
+    def declare_basic_consuming(self, queue_name, callback):
+        self._channel.basic_consume(
+            queue=queue_name,
+            consumer_callback=callback
+        )
+
+    def declare_default_consuming(self, queue_name, callback, passive=False,
+                                  durable=False,exclusive=False, auto_delete=False,
+                                  arguments=None):
         """
-        声明消费
-        :param func: 回调函数
+        声明一个默认的交换机的队列，并且监听这个队列
+        :param queue_name:
+        :param callback:
         :return:
         """
-        self._channel.basic_consume(callback, queue=queue_name)
+        self.declare_queue(
+            queue_name=queue_name,passive=passive,
+            durable=durable,exclusive=exclusive,
+            auto_delete=auto_delete,arguments=arguments
+        )
+        self.declare_basic_consuming(
+            queue_name=queue_name,
+            callback=callback
+        )
 
     def declare_consuming(self, exchange_name, routing_key, queue_name, callback):
-        self.bind_topic_exchange(exchange_name,routing_key,queue_name)
+        """
+        声明一个主题交换机队列，并且将队列和交换机进行绑定，同时监听这个队列
+        :param exchange_name:
+        :param routing_key:
+        :param queue_name:
+        :param callback:
+        :return:
+        """
+        self.bind_topic_exchange(exchange_name, routing_key, queue_name)
         self.declare_basic_consuming(
             queue_name=queue_name,
             callback=callback
@@ -87,7 +115,8 @@ class RabbitMQ(object):
         )
 
     def send_json_string(self, body, exchange, key):
-        self.send(json.dumps(body), exchange=exchange, key=key)
+        data = json.dumps(body)
+        self.send(data, exchange=exchange, key=key)
 
     def run(self):
         for item in self._rpc_class_list:

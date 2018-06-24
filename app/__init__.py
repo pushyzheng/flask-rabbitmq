@@ -1,5 +1,5 @@
 #encoding:utf-8
-from flask import Flask
+from flask import Flask,appcontext_tearing_down
 import config
 from src import RabbitMQ
 
