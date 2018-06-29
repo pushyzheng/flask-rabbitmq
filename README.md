@@ -2,6 +2,14 @@
 
 `flask-rabbitmq`是一个简化Python的`rabbitmq`操作的框架，并且很好地和Flask结合，让你不需要去考虑底层的操作。
 
+## Features
+
+- 跟随Flask应用启动，让开发者不需要考虑进程的阻塞
+
+- 通过`config.py`配置连接，很好的与代码解耦
+
+- 通过装饰器声明队列，简化声明队列和消费的操作
+
 ## Simple example
 
 首先在`app/__init__.py`在实例化`RabbitMQ`和`Queue`对象，然后导入`demo`的包文件：
