@@ -1,13 +1,41 @@
 # encoding:utf-8
-from src.util._logger import logger
+from flask_rabbitmq.util._logger import logger
+from functools import wraps
 import threading
 import json
 import pika
 
+
+# 定义交换机类型的枚举值
+class ExchangeType():
+
+    DEFAULT = 'default'
+    TOPIC = 'topic'
+
+class Queue():
+
+    def __init__(self):
+        self._rpc_class_list = []
+
+    def __call__(self, queue_name, type = 'default',exchange_name = None, routing_key = None):
+        """
+        当Queue对象呗调用时，如@queue()执行的操作
+        :param queue_name:
+        :param type: 交换机的类型
+        :param exchange_name:
+        :param routing_key:
+        :return:
+        """
+        logger.info("Queue callback called")
+        def _(func):
+            self._rpc_class_list.append((type, queue_name, exchange_name, routing_key, func))
+        return _
+
 class RabbitMQ(object):
 
-    def __init__(self, app=None):
+    def __init__(self, app=None, queue=None):
         self.app = app
+        self.queue = queue
         self.config = self.app.config
         if not (self.config.get('RPC_USER_NAME') and self.config.get('RPC_PASSWORD') and self.config.get('RPC_HOST')):
             logger.error('没有配置rpc服务器的用户名和密码')
@@ -119,8 +147,22 @@ class RabbitMQ(object):
         self.send(data, exchange=exchange, key=key)
 
     def run(self):
+        # 进行注册和声明
         for item in self._rpc_class_list:
             item().declare()
+        for (type, queue_name, exchange_name, routing_key, callback) in self.queue._rpc_class_list:
+            if type == ExchangeType.DEFAULT:
+                self.declare_default_consuming(
+                    queue_name=queue_name,
+                    callback=callback
+                )
+            if type == ExchangeType.TOPIC:
+                self.declare_consuming(
+                    queue_name=queue_name,
+                    exchange_name=exchange_name,
+                    routing_key=routing_key,
+                    callback=callback
+                )
         logger.info("consuming...")
         t = threading.Thread(target = self.consuming)
         t.start()

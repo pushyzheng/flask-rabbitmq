@@ -11,6 +11,6 @@ class DefaultExchange(object):
 
     def declare(self):
         rpc.declare_default_consuming('hello', self.callback)
-        rpc.send(
-            body='hello world', exchange='', key='hello'
-        )
+        # rpc.send(
+        #     body='hello world', exchange='', key='hello'
+        # )
