@@ -1,6 +1,6 @@
 # encoding:utf-8
-from app import app
-from app import rpc
+from example.app import app
+from example.app import rpc
 
 @app.route('/')
 def test():
