@@ -9,4 +9,4 @@ app.config.from_object(config)
 queue = Queue()
 rpc = RabbitMQ(app, queue)
 
-from app import views,demo
+from app import views, demo

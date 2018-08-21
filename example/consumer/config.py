@@ -1,6 +1,5 @@
 import os
 
-DEBUG = True
 SECRET_KEY = os.urandom(24)
 
 RPC_USER_NAME = 'Pushy'
