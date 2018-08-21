@@ -15,5 +15,4 @@ def sum_callback(ch, method, props, body):
     }
     rpc.send_json(data, exchange='sum-result-exchange', key='sum-result-key', corr_id=props.correlation_id)
 
-
 rpc.run()
