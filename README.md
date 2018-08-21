@@ -2,6 +2,15 @@
 
 `flask-rabbitmq`是一个简化Python的`rabbitmq`操作的框架，并且很好地和Flask结合，让你不需要去考虑底层的操作。
 
+
+## Install
+
+在项目已经提交到[Pypi](https://pypi.org/project/flask-rabbitmq/)上，可直接通过`pip`进行安装：
+
+```
+$ pip install flask-rabbitmq
+```
+
 ## Features
 
 - 跟随Flask应用启动，让开发者不需要考虑进程的阻塞
