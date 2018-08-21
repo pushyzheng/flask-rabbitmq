@@ -1,6 +1,6 @@
 #encoding:utf-8
+import config
 from flask import Flask
-from example import config
 from flask_rabbitmq import RabbitMQ
 from flask_rabbitmq import Queue
 
@@ -10,4 +10,4 @@ app.config.from_object(config)
 queue = Queue()
 rpc = RabbitMQ(app, queue)
 
-from example.app import test
+from app import views,demo

@@ -1,8 +1,8 @@
 #encoding:utf-8
 from flask_script import Manager, Server, Shell
 from flask_migrate import Migrate, MigrateCommand
-from example.app import db
-from example.app import app
+from test.app import db
+from test.app import app
 
 manager = Manager(app)
 migrate = Migrate(app, db)

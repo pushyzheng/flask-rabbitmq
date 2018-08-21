@@ -1,7 +1,7 @@
 # encoding:utf-8
-from example.app import rpc
+from app import rpc
 
-class CheckResultRpc():
+class TopicExchange():
 
     def __init__(self):
         pass

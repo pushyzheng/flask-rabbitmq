@@ -77,17 +77,7 @@ class RabbitMQ(object):
 
     def declare_queue(self, queue_name, passive=False, durable=False,
                       exclusive=False, auto_delete=False, arguments=None):
-        """
-        声明一个队列
-        :param queue_name: 队列名
-        :param passive:
-        :param durable:
-        :param exclusive:
-        :param auto_delete:
-        :param arguments:
-        :return: pika 框架生成的随机回调队列名
-        """
-        result = self._channel.queue_declare(
+        self._channel.queue_declare(
             queue=queue_name,
             passive=passive,
             durable=durable,
@@ -95,13 +85,11 @@ class RabbitMQ(object):
             auto_delete=auto_delete,
             arguments=arguments
         )
-        print(result.method.queue)
-        return result.method.queue
 
     def declare_basic_consuming(self, queue_name, callback):
         self._channel.basic_consume(
-            consumer_callback=callback,
-            queue=queue_name
+            queue=queue_name,
+            consumer_callback=callback
         )
 
     def declare_default_consuming(self, queue_name, callback, passive=False,
@@ -113,7 +101,7 @@ class RabbitMQ(object):
         :param callback:
         :return:
         """
-        result = self.declare_queue(
+        self.declare_queue(
             queue_name=queue_name,passive=passive,
             durable=durable,exclusive=exclusive,
             auto_delete=auto_delete,arguments=arguments
@@ -122,7 +110,6 @@ class RabbitMQ(object):
             queue_name=queue_name,
             callback=callback
         )
-        return result
 
     def declare_consuming(self, exchange_name, routing_key, queue_name, callback):
         """
@@ -147,13 +134,6 @@ class RabbitMQ(object):
             raise AttributeError("注册的类必须包含 declare 方法")
         self._rpc_class_list.append(rpc_class)
 
-    def send_sync(self):
-        """
-        发送并同步接受回复消息
-        :return:
-        """
-        pass
-
     def send(self, body, exchange, key):
         self._channel.basic_publish(
             exchange=exchange,
@@ -161,7 +141,7 @@ class RabbitMQ(object):
             body=body
         )
 
-    def send_json(self, body, exchange, key):
+    def send_json_string(self, body, exchange = '', key = None):
         data = json.dumps(body)
         self.send(data, exchange=exchange, key=key)
 

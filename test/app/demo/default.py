@@ -1,5 +1,5 @@
 # encoding:utf-8
-from example.app import rpc
+from app import rpc
 
 class DefaultExchange(object):
 
@@ -10,7 +10,6 @@ class DefaultExchange(object):
         print(body)
 
     def declare(self):
-        rpc.declare_default_consuming('hello', self.callback)
-        # rpc.send(
-        #     body='hello world', exchange='', key='hello'
-        # )
+        # result = rpc.declare_queue('queue-', exclusive=True)
+        # rpc.declare_basic_consuming(queue_name='queue-',callback=self.callback)
+        pass

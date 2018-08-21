@@ -1,11 +1,11 @@
 # encoding:utf-8
-from example.app import rpc,queue
-from example.app.test.topic import CheckResultRpc
-from example.app.test.default import DefaultExchange
+from app import rpc,queue
+from app.demo.topic import TopicExchange
+from app.demo.default import DefaultExchange
 from flask_rabbitmq import ExchangeType
 
-# 通过注册类的形式进行声明
-rpc.register_class(CheckResultRpc)
+# 通过注册类的形式进行声明，这样可以实现多个队列使用同一个回调函数
+rpc.register_class(TopicExchange)
 rpc.register_class(DefaultExchange)
 
 # 通过装饰器的方式进行声明一个默认交换机的队列

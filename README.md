@@ -8,13 +8,17 @@
 
 - 通过`config.py`配置连接，很好的与代码解耦
 
-- 通过装饰器声明队列，简化声明队列和消费的操作
+- 支持通过装饰器或注册类的方式声明队列，简化声明队列和消费的操作
 
 ## Simple example
 
 首先在`app/__init__.py`在实例化`RabbitMQ`和`Queue`对象，然后导入`demo`的包文件：
 
 ```python
+from example.app import app
+from flask_rabbitmq import Queue
+from flask_rabbitmq import RabbitMQ
+
 queue = Queue()
 rpc = RabbitMQ(app, queue)
 
