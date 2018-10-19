@@ -2,6 +2,8 @@
 
 `flask-rabbitmq` is a frame that simplifies python to operate rabbitmq and can be combined with Flask very well. So you don't need to think about the underlying operations
 
+[中文文档点这](https://github.com/PushyZqin/flask-rabbitmq/blob/dev/documentation/%E4%B8%AD%E6%96%87README.md)
+
 ## Install
 
 This project has been commited to Pypi, can be installed by `pip`:
