@@ -7,6 +7,7 @@ import json
        exchange_name='sum-exchange', routing_key='sum-key')
 def sum_callback(ch, method, props, body):
     print(props.correlation_id)
+
     data = json.loads(body)
     result = data['a'] + data['b']
     print("Result -- " + str(result))
