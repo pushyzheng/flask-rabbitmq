@@ -160,28 +160,44 @@ class RabbitMQ(object):
         发送并同步接受回复消息
         :return:
         """
-        corr_id = str(uuid.uuid4())
+        result = self._channel.queue_declare(exclusive=True)
+        self.callback_queue = result.method.queue  # 得到随机回调队列名
+        self._channel.basic_consume(self.on_response,   # 客户端消费回调队列
+                                    # no_ack=True,
+                                    queue=self.callback_queue)
+
+        corr_id = str(uuid.uuid4())  # 生成客户端请求id
         self.data[corr_id] = {
             'isAccept': False,
             'result': None
         }
-        self._channel.basic_publish(
+        self._channel.basic_publish( # 发送数据给服务端
             exchange=exchange,
             routing_key=key,
             body=body,
             properties=pika.BasicProperties(
-                reply_to=key, correlation_id=corr_id,
+                reply_to=self.callback_queue,
+                correlation_id=corr_id,
             )
         )
-        while True:
-            # 判断是否接收到服务端返回的消息
-            if not self.data[corr_id]['isAccept']:
-                logger.info("The client called process_data_events ...")
-                self._connection.process_data_events()
-                time.sleep(0.5)
-                continue
-            else:
-                return self.data[corr_id]['result']
+
+        while not self.data[corr_id]['isAccept']:  # 判断是否接收到服务端返回的消息
+            self._connection.process_data_events()
+            time.sleep(0.3)
+            continue
+
+        logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
+        return self.data[corr_id]['result']
+
+    def on_response(self, ch, method, props, body):
+        logger.info("on response => {}".format(body))
+
+        corr_id = props.correlation_id  # 从props得到服务端返回的客户度传入的corr_id值
+        info_dict = self.data[corr_id]  # 得到对应corr_id存储的客户端信息和是否接受过的对象
+        info_dict['isAccept'] = True    # 设置为已经接受到服务端返回的消息
+        info_dict['result'] = str(body)
+
+        self._channel.close()
 
     def send_json_sync(self, body, exchange, key):
         data = json.dumps(body)

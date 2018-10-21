@@ -1,10 +1,8 @@
 # encoding:utf-8
 from app import rpc, queue
-from flask_rabbitmq import ExchangeType
 import json
 
-@queue(queue_name='sum', type=ExchangeType.TOPIC,
-       exchange_name='sum-exchange', routing_key='sum-key')
+@queue(queue_name='rpc-queue')
 def sum_callback(ch, method, props, body):
     print(props.correlation_id)
 
@@ -14,6 +12,6 @@ def sum_callback(ch, method, props, body):
     data = {
         'result': result
     }
-    rpc.send_json(data, exchange='sum-result-exchange', key='sum-result-key', corr_id=props.correlation_id)
+    rpc.send_json(data, exchange='', key=props.reply_to, corr_id=props.correlation_id)
 
 rpc.run()

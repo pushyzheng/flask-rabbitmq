@@ -3,9 +3,13 @@ from app import app
 from app import rpc
 from flask import request
 
+@app.route('/')
+def index():
+    return 'Hello World'
+
 # 消息队列（异步）
 @app.route('/sum')
-def index():
+def sum():
     a = request.args.get('a', type=int)
     b = request.args.get('b', type=int)
     if not a or not b:
@@ -23,5 +27,5 @@ def sync_sum():
         return 'lack param'
     data = {'a':a, 'b':b}
     # 通过同步的方法来发送
-    result = rpc.send_json_sync(data, exchange='sum-exchange', key='sum-key')
+    result = rpc.send_json_sync(data, exchange='', key='rpc-queue')
     return result
