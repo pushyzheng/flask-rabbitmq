@@ -163,7 +163,7 @@ class RabbitMQ(object):
         result = self._channel.queue_declare(exclusive=True)
         self.callback_queue = result.method.queue  # 得到随机回调队列名
         self._channel.basic_consume(self.on_response,   # 客户端消费回调队列
-                                    # no_ack=True,
+                                    no_ack=True,
                                     queue=self.callback_queue)
 
         corr_id = str(uuid.uuid4())  # 生成客户端请求id
@@ -197,7 +197,7 @@ class RabbitMQ(object):
         info_dict['isAccept'] = True    # 设置为已经接受到服务端返回的消息
         info_dict['result'] = str(body)
 
-        self._channel.close()
+        #self._channel.close()
 
     def send_json_sync(self, body, exchange, key):
         data = json.dumps(body)
