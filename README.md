@@ -44,7 +44,7 @@ from flask_rabbitmq import ExchangeType
 def helloc_callback(ch, method, props, body):
     print(body)
 
-# declare the queue of topic exchange, flask-rabbitmq will bind automatically
+# declare the queue of topic exchange, flask-rabbitmq will bind automatically by key
 @queue(queue_name='hello-topic', type=ExchangeType.TOPIC, exchange_name='hello-exchange',
        routing_key='hello-key')
 def hellp_topic_callback(ch, method, props, body):

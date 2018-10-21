@@ -28,7 +28,7 @@ class RabbitMQ(object):
         self._rpc_class_list = []
         self.data = {}
 
-    def bind_topic_exchange(self, exchange_name, routing_key, queue_name):
+    def bind_topic_exchange(self, queue_name, exchange_name, routing_key):
         """
         绑定主题交换机和队列
         :param exchange_name: 需要绑定的交换机名

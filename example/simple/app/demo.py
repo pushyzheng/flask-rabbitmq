@@ -12,11 +12,24 @@ class Simple():
         print(body)
 
     def declare(self):
-        # rpc.declare_queue('simple2', auto_delete=True)
-        # rpc.basic_consuming('simple2', self.callback)
+        rpc.declare_queue('simple2', auto_delete=True)
+        rpc.basic_consuming('simple2', self.callback)
 
-        # 或者直接通过declare_default_consuming 声明同时绑定
-        rpc.declare_default_consuming('simple2', self.callback)
+        # 或者直接通过declare_default_consuming 声明同时消费
+        #rpc.declare_default_consuming('simple2', self.callback)
+
+class SimpleTopic():
+
+    def callback(self, ch, method, props, body):
+        print(body)
+
+    def declare(self):
+        rpc.bind_topic_exchange(queue_name='simple2-topic',
+                                exchange_name='simple2-exchange',
+                                routing_key='simple2-key')
+
+        rpc.basic_consuming('simple2-topic', self.callback)
 
 rpc.register_class(Simple)
+rpc.register_class(SimpleTopic)
 rpc.run()
