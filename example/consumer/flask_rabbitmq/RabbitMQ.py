@@ -14,8 +14,7 @@ class RabbitMQ(object):
         self.queue = queue
         self.config = self.app.config
         if not (self.config.get('RPC_USER_NAME') and self.config.get('RPC_PASSWORD') and self.config.get('RPC_HOST')):
-            logger.error('没有配置rpc服务器的用户名和密码')
-            raise Exception('没有配置rpc服务器的用户名和密码')
+            raise Exception('Username and password for the RPC server are not configured.')
         self.credentials = pika.PlainCredentials(
             self.config['RPC_USER_NAME'],
             self.config['RPC_PASSWORD']
@@ -53,7 +52,7 @@ class RabbitMQ(object):
             routing_key=routing_key
         )
 
-    def declare_queue(self, queue_name, passive=False, durable=False,
+    def declare_queue(self, queue_name='', passive=False, durable=False,
                       exclusive=False, auto_delete=False, arguments=None):
         """
         声明一个队列
@@ -73,7 +72,6 @@ class RabbitMQ(object):
             auto_delete=auto_delete,
             arguments=arguments
         )
-        print(result.method.queue)
         return result.method.queue
 
     def declare_basic_consuming(self, queue_name, callback):
@@ -125,17 +123,8 @@ class RabbitMQ(object):
             raise AttributeError("注册的类必须包含 declare 方法")
         self._rpc_class_list.append(rpc_class)
 
-    def accept(self, key, result):
-        """
-        同步接受确认消息
-        :param key: correlation_id
-        :param result 服务端返回的消息
-        """
-        self.data[key]['isAccept'] = True
-        self.data[key]['result'] = result
-
     def send(self, body, exchange, key, corr_id=None):
-        if None:
+        if not corr_id:
             self._channel.basic_publish(
                 exchange=exchange,
                 routing_key=key,
@@ -160,23 +149,24 @@ class RabbitMQ(object):
         发送并同步接受回复消息
         :return:
         """
-        result = self._channel.queue_declare(exclusive=True)
-        self.callback_queue = result.method.queue  # 得到随机回调队列名
+        callback_queue = self.declare_queue(exclusive=True,
+                                            auto_delete=True)  # 得到随机回调队列名
         self._channel.basic_consume(self.on_response,   # 客户端消费回调队列
                                     no_ack=True,
-                                    queue=self.callback_queue)
+                                    queue=callback_queue)
 
         corr_id = str(uuid.uuid4())  # 生成客户端请求id
         self.data[corr_id] = {
             'isAccept': False,
-            'result': None
+            'result': None,
+            'callbackQueue': callback_queue
         }
         self._channel.basic_publish( # 发送数据给服务端
             exchange=exchange,
             routing_key=key,
             body=body,
             properties=pika.BasicProperties(
-                reply_to=self.callback_queue,
+                reply_to=callback_queue,
                 correlation_id=corr_id,
             )
         )
@@ -189,15 +179,24 @@ class RabbitMQ(object):
         logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
         return self.data[corr_id]['result']
 
+    def accept(self, key, result):
+        """
+        同步接受确认消息
+        :param key: correlation_id
+        :param result 服务端返回的消息
+        """
+        self.data[key]['isAccept'] = True # 设置为已经接受到服务端返回的消息
+        self.data[key]['result'] = str(result)
+        self._channel.queue_delete(self.data[key]['callbackQueue'])  # 删除客户端声明的回调队列
+
     def on_response(self, ch, method, props, body):
+        """
+        所有的RPC请求回调都会调用该方法，在该方法内修改对应corr_id已经接受消息的isAccept值和返回结果
+        """
         logger.info("on response => {}".format(body))
 
         corr_id = props.correlation_id  # 从props得到服务端返回的客户度传入的corr_id值
-        info_dict = self.data[corr_id]  # 得到对应corr_id存储的客户端信息和是否接受过的对象
-        info_dict['isAccept'] = True    # 设置为已经接受到服务端返回的消息
-        info_dict['result'] = str(body)
-
-        #self._channel.close()
+        self.accept(corr_id, body)
 
     def send_json_sync(self, body, exchange, key):
         data = json.dumps(body)

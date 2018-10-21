@@ -15,4 +15,9 @@ def sum_callback(ch, method, props, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
     rpc.send_json(data, exchange='', key=props.reply_to, corr_id=props.correlation_id)
 
+
+class SampleQueue():
+
+    pass
+
 rpc.run()

@@ -28,13 +28,4 @@ class Queue():
         return _
 
 
-class BasicAMQP():
-
-    __metaclass__ = ABCMeta  # 抽象类
-
-    @abstractmethod
-    def declare(self):
-        pass
-
-
 from .RabbitMQ import RabbitMQ

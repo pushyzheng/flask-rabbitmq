@@ -74,7 +74,7 @@ class RabbitMQ(object):
         )
         return result.method.queue
 
-    def declare_basic_consuming(self, queue_name, callback):
+    def basic_consuming(self, queue_name, callback):
         self._channel.basic_consume(
             consumer_callback=callback,
             queue=queue_name
@@ -94,7 +94,7 @@ class RabbitMQ(object):
             durable=durable,exclusive=exclusive,
             auto_delete=auto_delete,arguments=arguments
         )
-        self.declare_basic_consuming(
+        self.basic_consuming(
             queue_name=queue_name,
             callback=callback
         )
@@ -110,7 +110,7 @@ class RabbitMQ(object):
         :return:
         """
         self.bind_topic_exchange(exchange_name, routing_key, queue_name)
-        self.declare_basic_consuming(
+        self.basic_consuming(
             queue_name=queue_name,
             callback=callback
         )
@@ -219,6 +219,5 @@ class RabbitMQ(object):
                     routing_key=routing_key,
                     callback=callback
                 )
-        logger.info("consuming...")
         t = threading.Thread(target = self.consuming)
         t.start()
