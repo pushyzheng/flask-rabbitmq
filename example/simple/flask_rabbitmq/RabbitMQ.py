@@ -9,7 +9,7 @@ import pika
 
 class RabbitMQ(object):
 
-    def __init__(self, app=None, queue=None):
+    def __init__(self, app, queue):
         self.app = app
         self.queue = queue
         self.config = self.app.config
@@ -28,7 +28,7 @@ class RabbitMQ(object):
         self._rpc_class_list = []
         self.data = {}
 
-    def bind_topic_exchange(self, queue_name, exchange_name, routing_key):
+    def bind_topic_exchange(self, exchange_name, routing_key, queue_name):
         """
         绑定主题交换机和队列
         :param exchange_name: 需要绑定的交换机名
@@ -219,5 +219,6 @@ class RabbitMQ(object):
                     routing_key=routing_key,
                     callback=callback
                 )
+        logger.info("consuming...")
         t = threading.Thread(target = self.consuming)
         t.start()

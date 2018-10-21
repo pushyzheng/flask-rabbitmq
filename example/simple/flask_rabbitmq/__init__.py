@@ -1,12 +1,18 @@
 # encoding:utf-8
 from flask_rabbitmq.util._logger import logger
-from abc import ABCMeta, abstractmethod
 
 # 定义交换机类型的枚举值
 class ExchangeType():
 
     DEFAULT = 'default'
     TOPIC = 'topic'
+
+def register_class(rpc):
+    def decotator(cls):
+        RabbitMQ.rpc_instance = rpc
+        rpc.register_class(cls)
+        return cls
+    return decotator
 
 class Queue():
 

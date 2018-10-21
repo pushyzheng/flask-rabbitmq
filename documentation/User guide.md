@@ -49,10 +49,18 @@ class Simple(object):
 rpc.declare_default_consuming('simple2', self.callback)
 ```
 
-当然别忘了，还需要调用`rpc`对象的`register_class`方法来注册该类：
+注意，我们还需要注册该类才能正确地声明指定的队列，`flask-rabbitmq`提供了两种注册的方式：
 
 ```python
+from flask_rabbitmq import register_class
+
+# 直接调用rpc的register_class方法进行注册
 rpc.register_class(Simple)
+
+# 通过@register_class装饰器来注册
+@register_class(rpc)
+class Simple(object):
+    # other code
 ```
 
 #### 主题交换机

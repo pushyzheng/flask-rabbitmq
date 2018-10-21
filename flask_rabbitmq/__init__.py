@@ -1,12 +1,15 @@
 # encoding:utf-8
 from flask_rabbitmq.util._logger import logger
-from abc import ABCMeta, abstractmethod
 
 # 定义交换机类型的枚举值
 class ExchangeType():
 
     DEFAULT = 'default'
     TOPIC = 'topic'
+
+def register_class(cls, rpc):
+    rpc.register_class(cls)
+    return cls
 
 class Queue():
 
@@ -26,15 +29,6 @@ class Queue():
         def _(func):
             self._rpc_class_list.append((type, queue_name, exchange_name, routing_key, func))
         return _
-
-
-class BasicAMQP():
-
-    __metaclass__ = ABCMeta  # 抽象类
-
-    @abstractmethod
-    def declare(self):
-        pass
 
 
 from .RabbitMQ import RabbitMQ
