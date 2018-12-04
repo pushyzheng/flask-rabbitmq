@@ -202,7 +202,7 @@ class RabbitMQ(object):
         data = json.dumps(body)
         return self.send_sync(data, exchange=exchange, key=key)
 
-    def run(self):
+    def _run(self):
         # 进行注册和声明
         for item in self._rpc_class_list:
             item().declare()
@@ -222,3 +222,6 @@ class RabbitMQ(object):
         logger.info("consuming...")
         t = threading.Thread(target = self.consuming)
         t.start()
+
+    def run(self, host = "localhost", port=5000):
+        self.app.run(host, port)

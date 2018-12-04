@@ -9,7 +9,7 @@ import pika
 
 class RabbitMQ(object):
 
-    def __init__(self, app, queue):
+    def __init__(self, app=None, queue=None):
         self.app = app
         self.queue = queue
         self.config = self.app.config

@@ -2,6 +2,11 @@
 from app import queue
 from app import rpc
 from flask_rabbitmq import register_class
+from flask_rabbitmq.decorators import send_to
+
+@send_to('hello')
+def send_to_hello():
+    pass
 
 @queue('simple')
 def simple(ch, method, props, body):
@@ -33,4 +38,3 @@ class SimpleTopic():
         rpc.basic_consuming('simple2-topic', self.callback)
 
 rpc.register_class(Simple)
-rpc.run()
