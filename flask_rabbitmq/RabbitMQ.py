@@ -144,7 +144,7 @@ class RabbitMQ(object):
         data = json.dumps(body)
         self.send(data, exchange=exchange, key=key, corr_id=corr_id)
 
-    def send_sync(self, body, exchange, key):
+    def send_sync(self, body, exchange, key, timeout=5):
         """
         发送并同步接受回复消息
         :return:
@@ -171,13 +171,17 @@ class RabbitMQ(object):
             )
         )
 
-        while not self.data[corr_id]['isAccept']:  # 判断是否接收到服务端返回的消息
-            self._connection.process_data_events()
-            time.sleep(0.3)
-            continue
-
-        logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
-        return self.data[corr_id]['result']
+        end = time.time() + timeout
+        while time.time() < end:
+            if self.data[corr_id]['isAccept']:  # 判断是否接收到服务端返回的消息
+                logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
+                return self.data[corr_id]['result']
+            else:
+                time.sleep(0.3)
+                continue
+        # 超时处理
+        logger.error("Get the response timeout.")
+        return None
 
     def accept(self, key, result):
         """

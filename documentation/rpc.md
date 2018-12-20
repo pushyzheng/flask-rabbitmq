@@ -1,6 +1,6 @@
 ## RPC
 
-`flask-rabbit`也支持RPC的方式通信，需要进行如下的额外配置。
+`flask-rabbit`也支持RPC的方式通信，需要进行如下的额外的操作。
 
 ### 1. Client
 
