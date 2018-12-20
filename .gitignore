@@ -104,3 +104,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+exmaple/consumer/flask_rabbitmq
+exmaple/producer/flask_rabbitmq

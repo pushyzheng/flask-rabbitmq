@@ -13,20 +13,50 @@ class RabbitMQ(object):
         self.app = app
         self.queue = queue
         self.config = self.app.config
-        if not (self.config.get('RPC_USER_NAME') and self.config.get('RPC_PASSWORD') and self.config.get('RPC_HOST')):
-            raise Exception('Username and password for the RPC server are not configured.')
-        self.credentials = pika.PlainCredentials(
-            self.config['RPC_USER_NAME'],
-            self.config['RPC_PASSWORD']
-        )
-        self._connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                self.config['RPC_HOST'],
-                credentials=self.credentials
-            ))
-        self._channel = self._connection.channel()
+
+        self.rabbitmq_server_host = None
+        self.rabbitmq_server_username = None
+        self.rabbitmq_server_password = None
+
+        self._connection = None
+        self._channel = None
         self._rpc_class_list = []
         self.data = {}
+        # initialize some operation
+        self.init()
+
+    def init(self):
+        self.valid_config()
+        self.connect_rabbitmq_server()
+
+    # valid config value such as server host, username and password
+    def valid_config(self):
+        if not self.config.get('RABBITMQ_HOST'):
+            raise Exception("The rabbitMQ application must configure host.")
+        self.rabbitmq_server_host = self.config.get('RABBITMQ_HOST')
+        self.rabbitmq_server_username = self.config.get('RABBITMQ_USERNAME')
+        self.rabbitmq_server_password = self.config.get('RABBITMQ_PASSWORD')
+
+    # connect RabbitMQ server
+    def connect_rabbitmq_server(self):
+        if not (self.rabbitmq_server_username and self.rabbitmq_server_password):
+            # connect RabbitMQ server with no authentication
+            self._connection = pika.BlockingConnection()
+        elif (self.rabbitmq_server_username and self.rabbitmq_server_password):
+            # connect RabbitMQ server with authentication
+            credentials = pika.PlainCredentials(
+                self.rabbitmq_server_username,
+                self.rabbitmq_server_password
+            )
+            self._connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    self.rabbitmq_server_host,
+                    credentials=credentials
+                ))
+        else:
+            raise Exception()
+        # create channel object
+        self._channel = self._connection.channel()
 
     def bind_topic_exchange(self, exchange_name, routing_key, queue_name):
         """
@@ -207,7 +237,7 @@ class RabbitMQ(object):
         return self.send_sync(data, exchange=exchange, key=key)
 
     def _run(self):
-        # 进行注册和声明
+        # register queues and declare all of exchange and queue
         for item in self._rpc_class_list:
             item().declare()
         for (type, queue_name, exchange_name, routing_key, callback) in self.queue._rpc_class_list:
@@ -223,9 +253,15 @@ class RabbitMQ(object):
                     routing_key=routing_key,
                     callback=callback
                 )
-        logger.info("consuming...")
+        logger.info(" * The flask RabbitMQ application is consuming")
         t = threading.Thread(target = self.consuming)
         t.start()
 
-    def run(self, host = "localhost", port=5000):
+    # run the consumer application
+    def run(self):
+        self._run()
+
+    # run the consumer application with flask application
+    def run_with_flask_app(self, host = "localhost", port=5000):
+        self._run()
         self.app.run(host, port)

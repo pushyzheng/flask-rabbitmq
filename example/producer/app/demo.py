@@ -1,5 +1,5 @@
 # encoding:utf-8
-from app import rpc, queue
+from app import mq, queue
 import json
 
 @queue(queue_name='rpc-queue')
@@ -13,11 +13,8 @@ def sum_callback(ch, method, props, body):
         'result': result
     }
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    rpc.send_json(data, exchange='', key=props.reply_to, corr_id=props.correlation_id)
+    mq.send_json(data, exchange='', key=props.reply_to, corr_id=props.correlation_id)
 
 
 class SampleQueue():
-
     pass
-
-rpc.run()

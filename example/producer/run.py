@@ -1,5 +1,5 @@
 #encoding:utf-8
-from app import app
+from app import mq
 
 if __name__ == '__main__':
-    app.run(port=5001)
+    mq.run_with_flask_app()
