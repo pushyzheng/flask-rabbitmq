@@ -120,9 +120,12 @@ class RabbitMQ(object):
         :return:
         """
         result = self.declare_queue(
-            queue_name=queue_name,passive=passive,
-            durable=durable,exclusive=exclusive,
-            auto_delete=auto_delete,arguments=arguments
+            queue_name=queue_name,
+            passive=passive,
+            durable=durable,
+            exclusive=exclusive,
+            auto_delete=auto_delete,
+            arguments=arguments
         )
         self.basic_consuming(
             queue_name=queue_name,
@@ -207,11 +210,16 @@ class RabbitMQ(object):
                 logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
                 return self.data[corr_id]['result']
             else:
+                self._connection.process_data_events()
                 time.sleep(0.3)
                 continue
         # 超时处理
         logger.error("Get the response timeout.")
         return None
+
+    def send_json_sync(self, body, exchange, key):
+        data = json.dumps(body)
+        return self.send_sync(data, exchange=exchange, key=key)
 
     def accept(self, key, result):
         """
@@ -231,10 +239,6 @@ class RabbitMQ(object):
 
         corr_id = props.correlation_id  # 从props得到服务端返回的客户度传入的corr_id值
         self.accept(corr_id, body)
-
-    def send_json_sync(self, body, exchange, key):
-        data = json.dumps(body)
-        return self.send_sync(data, exchange=exchange, key=key)
 
     def _run(self):
         # register queues and declare all of exchange and queue
