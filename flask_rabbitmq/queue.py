@@ -6,7 +6,7 @@ class Queue():
     def __init__(self):
         self._rpc_class_list = []
 
-    def __call__(self, queue_name, type = ExchangeType.DEFAULT,exchange_name = None, routing_key = None):
+    def __call__(self, queue=None, type = ExchangeType.DEFAULT, exchange = '', routing_key = ''):
         """
         当Queue对象被调用时，如@queue()执行的操作
         :param queue_name: 队列名
@@ -16,5 +16,5 @@ class Queue():
         :return:
         """
         def _(func):
-            self._rpc_class_list.append((type, queue_name, exchange_name, routing_key, func))
+            self._rpc_class_list.append((type, queue, exchange, routing_key, func))
         return _

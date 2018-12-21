@@ -58,42 +58,17 @@ class RabbitMQ(object):
         # create channel object
         self._channel = self._connection.channel()
 
-    def bind_topic_exchange(self, exchange_name, routing_key, queue_name):
+    def temporary_queue_declare(self):
         """
-        绑定主题交换机和队列
-        :param exchange_name: 需要绑定的交换机名
-        :param routing_key:
-        :param queue_name: 需要绑定的交换机队列名
+        declare a temporary queue that named random string
+        and will automatically deleted when we disconnect the consumer
         :return:
         """
-        self._channel.queue_declare(
-            queue=queue_name,
-            auto_delete=True,
-            durable=True,
-        )
-        self._channel.exchange_declare(
-            exchange=exchange_name,
-            exchange_type='topic',
-            auto_delete=True,
-        )
-        self._channel.queue_bind(
-            exchange=exchange_name,
-            queue=queue_name,
-            routing_key=routing_key
-        )
+        return self.queue_declare(exclusive=True,
+                                  auto_delete=True)
 
-    def declare_queue(self, queue_name='', passive=False, durable=False,
+    def queue_declare(self, queue_name='', passive=False, durable=False,
                       exclusive=False, auto_delete=False, arguments=None):
-        """
-        声明一个队列
-        :param queue_name: 队列名
-        :param passive:
-        :param durable:
-        :param exclusive:
-        :param auto_delete:
-        :param arguments:
-        :return: pika 框架生成的随机回调队列名
-        """
         result = self._channel.queue_declare(
             queue=queue_name,
             passive=passive,
@@ -110,51 +85,8 @@ class RabbitMQ(object):
             queue=queue_name
         )
 
-    def declare_default_consuming(self, queue_name, callback, passive=False,
-                                  durable=False,exclusive=False, auto_delete=False,
-                                  arguments=None):
-        """
-        声明一个默认的交换机的队列，并且监听这个队列
-        :param queue_name:
-        :param callback:
-        :return:
-        """
-        result = self.declare_queue(
-            queue_name=queue_name,
-            passive=passive,
-            durable=durable,
-            exclusive=exclusive,
-            auto_delete=auto_delete,
-            arguments=arguments
-        )
-        self.basic_consuming(
-            queue_name=queue_name,
-            callback=callback
-        )
-        return result
-
-    def declare_consuming(self, exchange_name, routing_key, queue_name, callback):
-        """
-        声明一个主题交换机队列，并且将队列和交换机进行绑定，同时监听这个队列
-        :param exchange_name:
-        :param routing_key:
-        :param queue_name:
-        :param callback:
-        :return:
-        """
-        self.bind_topic_exchange(exchange_name, routing_key, queue_name)
-        self.basic_consuming(
-            queue_name=queue_name,
-            callback=callback
-        )
-
     def consuming(self):
         self._channel.start_consuming()
-
-    def register_class(self, rpc_class):
-        if not hasattr(rpc_class, 'declare'):
-            raise AttributeError("The registered class must contains the declare method")
-        self._rpc_class_list.append(rpc_class)
 
     def send(self, body, exchange, key, corr_id=None):
         if not corr_id:
@@ -177,25 +109,24 @@ class RabbitMQ(object):
         data = json.dumps(body)
         self.send(data, exchange=exchange, key=key, corr_id=corr_id)
 
-    def send_sync(self, body, exchange, key, timeout=5):
-        """
-        发送并同步接受回复消息
-        :return:
-        """
-        callback_queue = self.declare_queue(exclusive=True,
-                                            auto_delete=True)  # 得到随机回调队列名
-        self._channel.basic_consume(self.on_response,   # 客户端消费回调队列
-                                    no_ack=True,
-                                    queue=callback_queue)
-
-        corr_id = str(uuid.uuid4())  # 生成客户端请求id
+    # Send message to server synchronously（just like Remote Procedure Call）
+    def send_sync(self, body, key=None, timeout=5):
+        if not key:
+            raise Exception("The routing key is not present.")
+        corr_id = str(uuid.uuid4())  # generate correlation id
+        callback_queue = self.temporary_queue_declare() # 得到随机回调队列名
         self.data[corr_id] = {
             'isAccept': False,
             'result': None,
-            'callbackQueue': callback_queue
+            'reply_queue_name': callback_queue
         }
-        self._channel.basic_publish( # 发送数据给服务端
-            exchange=exchange,
+        # Client consume reply_queue
+        self._channel.basic_consume(self.on_response,
+                                    no_ack=True,
+                                    queue=callback_queue)
+        # send message to queue that server is consuming
+        self._channel.basic_publish(
+            exchange='',
             routing_key=key,
             body=body,
             properties=pika.BasicProperties(
@@ -205,7 +136,7 @@ class RabbitMQ(object):
         )
 
         end = time.time() + timeout
-        while time.time() < end:
+        while time.time() <   end:
             if self.data[corr_id]['isAccept']:  # 判断是否接收到服务端返回的消息
                 logger.info("Got the RPC server response => {}".format(self.data[corr_id]['result']))
                 return self.data[corr_id]['result']
@@ -217,9 +148,11 @@ class RabbitMQ(object):
         logger.error("Get the response timeout.")
         return None
 
-    def send_json_sync(self, body, exchange, key):
+    def send_json_sync(self, body, key=None):
+        if not key:
+            raise Exception("The routing key is not present.")
         data = json.dumps(body)
-        return self.send_sync(data, exchange=exchange, key=key)
+        return self.send_sync(data, key=key)
 
     def accept(self, key, result):
         """
@@ -229,7 +162,7 @@ class RabbitMQ(object):
         """
         self.data[key]['isAccept'] = True # 设置为已经接受到服务端返回的消息
         self.data[key]['result'] = str(result)
-        self._channel.queue_delete(self.data[key]['callbackQueue'])  # 删除客户端声明的回调队列
+        self._channel.queue_delete(self.data[key]['reply_queue_name'])  # 删除客户端声明的回调队列
 
     def on_response(self, ch, method, props, body):
         """
@@ -240,23 +173,37 @@ class RabbitMQ(object):
         corr_id = props.correlation_id  # 从props得到服务端返回的客户度传入的corr_id值
         self.accept(corr_id, body)
 
+    def register_class(self, rpc_class):
+        if not hasattr(rpc_class, 'declare'):
+            raise AttributeError("The registered class must contains the declare method")
+        self._rpc_class_list.append(rpc_class)
+
     def _run(self):
         # register queues and declare all of exchange and queue
         for item in self._rpc_class_list:
             item().declare()
         for (type, queue_name, exchange_name, routing_key, callback) in self.queue._rpc_class_list:
             if type == ExchangeType.DEFAULT:
-                self.declare_default_consuming(
-                    queue_name=queue_name,
-                    callback=callback
-                )
-            if type == ExchangeType.TOPIC:
-                self.declare_consuming(
-                    queue_name=queue_name,
-                    exchange_name=exchange_name,
-                    routing_key=routing_key,
-                    callback=callback
-                )
+                if not queue_name: # 如果队列名为空，则为它创建一个临时队列
+                    queue_name = self.temporary_queue_declare()
+                else:
+                    self._channel.queue_declare(queue=queue_name, auto_delete=True)
+                self._channel.basic_consume(queue=queue_name,
+                                            consumer_callback=callback)
+
+            if type == ExchangeType.FANOUT or type == ExchangeType.DIRECT or type == ExchangeType.TOPIC:
+                if not queue_name:  # 如果队列名为空，则为它创建一个临时队列
+                    queue_name = self.temporary_queue_declare()
+                else:
+                    self._channel.queue_declare(queue=queue_name)
+                self._channel.exchange_declare(exchange=exchange_name,  # 声明交换机
+                                               exchange_type=type)
+                self._channel.queue_bind(queue=queue_name,   # 绑定交换机和队列
+                                         exchange=exchange_name,
+                                         routing_key=routing_key)
+                self._channel.basic_consume(queue=queue_name,    # 消费队列
+                                            consumer_callback=callback)
+
         logger.info(" * The flask RabbitMQ application is consuming")
         t = threading.Thread(target = self.consuming)
         t.start()

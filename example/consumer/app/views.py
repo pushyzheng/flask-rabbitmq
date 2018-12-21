@@ -1,13 +1,13 @@
 # encoding:utf-8
 from app import app
-from app import rpc
+from app import mq
 from flask import request
 
 @app.route('/')
 def index():
     return 'Hello World'
 
-# 消息队列（异步）
+# Message Queue (Async)
 @app.route('/sum')
 def sum():
     a = request.args.get('a', type=int)
@@ -15,17 +15,22 @@ def sum():
     if not a or not b:
         return 'lack param'
     data = {'a':a, 'b':b}
-    rpc.send_json(data, exchange='sum-exchange', key='sum-key')
+    mq.send_json(data, exchange='sum-exchange', key='sum-key')
     return "ok"
 
-# RPC（同步）
+# Remote Procedure Call (Sync)
 @app.route('/sum/sync')
 def sync_sum():
     a = request.args.get('a', type=int)
     b = request.args.get('b', type=int)
     if not a or not b:
         return 'lack param'
-    data = {'a':a, 'b':b}
-    # 通过同步的方法来发送
-    result = rpc.send_json_sync(data, exchange='', key='rpc-queue')
+    data = {
+        'a': a,
+        'b': b
+    }
+    # send message synchronously
+    result = mq.send_json_sync(data, key='rpc-queue')
+    if not result:
+        return "The server don't return anything."
     return result
