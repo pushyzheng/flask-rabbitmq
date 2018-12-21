@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='flask-rabbitmq',
-    version='0.0.2',
+    version='0.0.3',
     author='Pushy',
     author_email='1437876073@qq.com',
     url='https://github.com/PushyZqin/flask-rabbitmq',
