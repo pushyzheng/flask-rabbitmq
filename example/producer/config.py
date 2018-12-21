@@ -6,4 +6,4 @@ SECRET_KEY = os.urandom(24)
 # RABBITMQ_USERNAME = 'Pushy'
 # RABBITMQ_PASSWORD = '123456'
 
-# RABBITMQ_HOST = 'localhost'
+RABBITMQ_HOST = 'localhost'
