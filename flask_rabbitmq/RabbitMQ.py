@@ -1,12 +1,11 @@
 # encoding:utf-8
-from util._logger import logger
 from . import ExchangeType
+from .util import logger
 import uuid
 import time
 import threading
 import json
 import pika
-
 
 class RabbitMQ(object):
 
