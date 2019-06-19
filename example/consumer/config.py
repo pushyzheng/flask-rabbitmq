@@ -2,6 +2,6 @@ import os
 
 SECRET_KEY = os.urandom(24)
 
-RABBITMQ_HOST = '120.78.165.238'
+RABBITMQ_HOST = 'localhost'
 RABBITMQ_USERNAME = 'guest'
 RABBITMQ_PASSWORD = 'guest'
