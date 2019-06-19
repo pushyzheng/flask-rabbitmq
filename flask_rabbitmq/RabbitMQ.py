@@ -1,5 +1,5 @@
 # encoding:utf-8
-from flask_rabbitmq.util._logger import logger
+from util._logger import logger
 from . import ExchangeType
 import uuid
 import time
