@@ -7,6 +7,7 @@ import threading
 import json
 import pika
 
+
 class RabbitMQ(object):
 
     def __init__(self, app=None, queue=None):
@@ -94,10 +95,12 @@ class RabbitMQ(object):
                                  routing_key=routing_key)
 
     def basic_consuming(self, queue_name, callback):
-        self._channel.basic_consume(
-            consumer_callback=callback,
-            queue=queue_name
-        )
+        # self._channel.basic_consume(
+        #     consumer_callback=callback,
+        #     queue=queue_name
+        # )
+        # update for python3.6
+        self._channel.basic_consume(queue_name, callback)
 
     def consuming(self):
         self._channel.start_consuming()
@@ -128,16 +131,18 @@ class RabbitMQ(object):
         if not key:
             raise Exception("The routing key is not present.")
         corr_id = str(uuid.uuid4())  # generate correlation id
-        callback_queue = self.temporary_queue_declare() # 得到随机回调队列名
+        callback_queue = self.temporary_queue_declare()  # 得到随机回调队列名
         self.data[corr_id] = {
             'isAccept': False,
             'result': None,
             'reply_queue_name': callback_queue
         }
         # Client consume reply_queue
-        self._channel.basic_consume(self.on_response,
-                                    no_ack=True,
-                                    queue=callback_queue)
+        # self._channel.basic_consume(self.on_response,
+        #                             no_ack=True,
+        #                             queue=callback_queue)
+        # update for python3.6 basic_consumer args order
+        self._channel.basic_consume(callback_queue, self.on_response, no_ack=True)
         # send message to queue that server is consuming
         self._channel.basic_publish(
             exchange='',
@@ -174,7 +179,7 @@ class RabbitMQ(object):
         :param key: correlation_id
         :param result 服务端返回的消息
         """
-        self.data[key]['isAccept'] = True # 设置为已经接受到服务端返回的消息
+        self.data[key]['isAccept'] = True  # 设置为已经接受到服务端返回的消息
         self.data[key]['result'] = str(result)
         self._channel.queue_delete(self.data[key]['reply_queue_name'])  # 删除客户端声明的回调队列
 
@@ -216,7 +221,7 @@ class RabbitMQ(object):
                 self.basic_consuming(queue_name, callback)
 
         logger.info(" * The flask RabbitMQ application is consuming")
-        t = threading.Thread(target = self.consuming)
+        t = threading.Thread(target=self.consuming)
         t.start()
 
     # run the consumer application
@@ -224,6 +229,6 @@ class RabbitMQ(object):
         self._run()
 
     # run the consumer application with flask application
-    def run_with_flask_app(self, host = "localhost", port=5000):
+    def run_with_flask_app(self, host="localhost", port=5000):
         self._run()
         self.app.run(host, port)

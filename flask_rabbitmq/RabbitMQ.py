@@ -94,10 +94,12 @@ class RabbitMQ(object):
                                  routing_key=routing_key)
 
     def basic_consuming(self, queue_name, callback):
-        self._channel.basic_consume(
-            consumer_callback=callback,
-            queue=queue_name
-        )
+        # self._channel.basic_consume(
+        #     consumer_callback=callback,
+        #     queue=queue_name
+        # )
+        # update for python3.6
+        self._channel.basic_consume(queue_name, callback)
 
     def consuming(self):
         self._channel.start_consuming()
@@ -135,9 +137,11 @@ class RabbitMQ(object):
             'reply_queue_name': callback_queue
         }
         # Client consume reply_queue
-        self._channel.basic_consume(self.on_response,
-                                    no_ack=True,
-                                    queue=callback_queue)
+        # self._channel.basic_consume(self.on_response,
+        #                             no_ack=True,
+        #                             queue=callback_queue)
+        # update for python3.6 basic_consumer args order
+        self._channel.basic_consume(callback_queue, self.on_response, no_ack=True)
         # send message to queue that server is consuming
         self._channel.basic_publish(
             exchange='',
